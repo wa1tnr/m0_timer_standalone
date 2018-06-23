@@ -6,6 +6,7 @@
 
 #include <Arduino.h>
 #include "neo_pixel.h"
+#define LED 13
 
 /******************************************************************************/
 /**  The Arduino M0 pro has 0x4000 as bootloader offset                      **/
@@ -14,31 +15,18 @@
 /* [ http://forum.arduino.cc/index.php?topic=332275.17 ] */
 
 int scale = 1;
-int buzzPin = 13 ; // A5
-
-
-uint8_t sound = 1; // 0 = off  1 = on
 
 void tickOff(void) { } 
 void tickOn(void) { } 
 void tick(void) { }
 
-void darkenfive(void) { // turn off buzzPin
-  digitalWrite(buzzPin, 0); // turn off
-}
-
 void darkenlight(void) {
-  digitalWrite(13, 0); // turn off
-  delay(2000);
+  digitalWrite(LED, 0); // turn off
 }
 
-void brightenfive(void) { // turn on pin five
-  digitalWrite(buzzPin, 1); // turn on
-}
 
 void brightenlight(void) {
-  digitalWrite(13, 1); // turn on
-  delay(220);
+  digitalWrite(LED, 1); // turn on
 }
 
 void blinkenlight(void) {
@@ -50,23 +38,25 @@ void introduction() {
     blinkenlight(); Serial.print(".");
 }
 
+void iblinki(void) {
+    blinkenlight();
+}
 
 void setup() {
-  Serial.begin(38400);     // Open serial communications:
+  Serial.begin(38400); // Open serial communications
+
+  // ANSI escape sequence
+  //  (yellow text in VT220 terminal:
 
   Serial.print("\033\133"); // ESC [
   Serial.print("\063\063"); // 33 - yellow fg
   Serial.print("m");        // for the stanza
 
-  // LED PA_17 - mapped by Arduino as digital 13
+  pinMode(LED, 1); // OUTPUT
 
-  pinMode(buzzPin, 1); // OUTPUT
-  pinMode(13, 1); // OUTPUT
-
-  darkenlight();  // not needed - insurance.
-  blinkenlight(); delay(44);
-  darkenlight(); // turn off so to notice the gap
-  delay(234);
+  darkenlight();
+  blinkenlight();
+  darkenlight();
 
 
   REG_GCLK_GENDIV = GCLK_GENDIV_DIV(0xfd) |       // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
@@ -102,35 +92,32 @@ void setup() {
   REG_TC4_INTFLAG |= TC_INTFLAG_MC1 | TC_INTFLAG_MC0 | TC_INTFLAG_OVF;        // Clear the interrupt flags
   REG_TC4_INTENSET = TC_INTENSET_MC1 | TC_INTENSET_MC0 | TC_INTENSET_OVF;     // Enable TC4 interrupts
  
+  // -------------------------------------------------
+  // 
+  //                23 June 2018
+  // 
+  //    To change the blink rate of the LED on D13,
+  //     select a different prescaler here:
+  // 
+  // -------------------------------------------------
+
   // 1024 256 64 16:
 
-      REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV1024 |   // Set prescaler to 1024
+  //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV1024 |   // Set prescaler to 1024
 
   //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV256  |   // Set prescaler to  256
 
-  //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV64   |   // Set prescaler to   64, 16MHz/64 = 256kHz
+      REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV64   |   // Set prescaler to   64, 16MHz/64 = 256kHz
 
   //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV16   |   // Set prescaler to   16
+
                        TC_CTRLA_ENABLE;               // Enable TC4
 
   while (TC4->COUNT8.STATUS.bit.SYNCBUSY);            // Wait for synchronization
 
   // introduction();
-
+  iblinki();
 }
-
-
-
-void led13Off(void) {
-  digitalWrite(13, 0); // turn off
-}
-
-
-void led13On(void) {
-  digitalWrite(13, 1); // turn on
-}
-
-
 
 // 1: scale  1, then 2, then -1: darken.
 // 2: scale -1, then 0:          brighten.
@@ -139,16 +126,16 @@ void led13On(void) {
 void pinToggle(void) {
   scale = scale + 1 ;
   if (scale > 0) {
-    scale = -1 ;    // reset
-    darkenfive();   // turn off buzzPin
+    scale = -1 ;     // reset
+    darkenlight();   // turn off LED
   } else {
-    brightenfive(); // turn on buzzPin
+    brightenlight(); // turn on LED
   }
 }
 
 
 void loop() {
-    Serial.print("."); // tell the serial port we're here
+    // Serial.print("."); // tell the serial port we're here
 }
 
 void TC4_Handler()             // Interrupt Service Routine (ISR) for timer TC4
@@ -160,7 +147,11 @@ void TC4_Handler()             // Interrupt Service Routine (ISR) for timer TC4
 
   if (TC4->COUNT8.INTFLAG.bit.MC0 && TC4->COUNT8.INTENSET.bit.MC0)             
   {
+
+   // ---------------------   ISR Payload   ---------------------
+
    pinToggle();
+
    REG_TC4_INTFLAG = TC_INTFLAG_MC0;      // Clear the MC0 interrupt flag
   }
 
