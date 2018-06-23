@@ -1,7 +1,7 @@
 // Sat 23 Jun 20:34:40 UTC 2018
 // 0105-a0a-06-
 
-// mevlillentut  naknadador   viskulna
+//  fie mef  mevlillentut  naknadador   viskulna
 
 // + Circuit Playground Express
 // + Feather M0 Express    + Metro M0 Express
@@ -36,8 +36,6 @@
 
 #undef  PERIOD
 #define PERIOD 0xec  // slow blink
-#undef  PERIOD
-#define PERIOD 0x25  // fast blink
 
 /******************************************************************************/
 /**  Simple state machine to toggle an LED from inside an ISR                **/
