@@ -1,10 +1,20 @@
-// Sat 23 Jun 19:43:57 UTC 2018
-// 0105-a0a-03-
+// Sat 23 Jun 20:34:40 UTC 2018
+// 0105-a0a-06-
 
-// viskulna   telfidia    kanicu
+// mevlillentut  naknadador   viskulna
+
+// + Circuit Playground Express
+// + Feather M0 Express    + Metro M0 Express
+// + Gemma M0    + Trinket M0
+// + ItsyBitsy M0 (Crickit CPX hardware with ItsyBitsy M0 software)
 
 #include <Arduino.h>
 #define LED 13 // which GPIO pin is the LED connected to?
+
+#ifdef ADAFRUIT_ITSYBITSY_M0 // Crickit CPX, masquerading as ItsyBitsy M0
+    #undef LED // standard led on pin 13 not used on Crickit CPX
+    #define LED 37 // pin 37 is where Crickit CPX has its led, when we pretend it's ItsyBitsy M0
+#endif
 
 // swap for opposite function:
 #define WAITFOR // do we wait for a serial connection or not?
@@ -26,6 +36,8 @@
 
 #undef  PERIOD
 #define PERIOD 0xec  // slow blink
+#undef  PERIOD
+#define PERIOD 0x25  // fast blink
 
 /******************************************************************************/
 /**  Simple state machine to toggle an LED from inside an ISR                **/
