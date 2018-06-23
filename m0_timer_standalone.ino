@@ -1,8 +1,9 @@
-// Sat 23 Jun 20:34:40 UTC 2018
-// 0105-a0a-06-
+// Sat 23 Jun 22:09:41 UTC 2018
+// 0105-a0a-07-
 
-//  fie mef  mevlillentut  naknadador   viskulna
+//  tirivata    emix fie mef  mevlillentut  naknadador
 
+// C Feather M0 Express - current target 21:55z 23 June 2018
 // + Circuit Playground Express
 // + Feather M0 Express    + Metro M0 Express
 // + Gemma M0    + Trinket M0
@@ -16,7 +17,7 @@
     #define LED 37 // pin 37 is where Crickit CPX has its led, when we pretend it's ItsyBitsy M0
 #endif
 
-// swap for opposite function:
+// swap for opposite wait function:
 #define WAITFOR // do we wait for a serial connection or not?
 #undef  WAITFOR // do we wait for a serial connection or not?
 
@@ -32,8 +33,6 @@
 // the last define wins out:
 #define PERIOD 0x5c  // mid speed blink
 
-
-
 #undef  PERIOD
 #define PERIOD 0xec  // slow blink
 
@@ -46,9 +45,9 @@
 
 int state = 1;
 
-void tickOff(void) { } 
-void tickOn(void) { } 
-void tick(void) { }
+// void tickOff(void) { }  // dead code
+// void tickOn(void) { } 
+// void tick(void) { }
 
 #define INVERT_LIGHT
 #undef INVERT_LIGHT
@@ -116,13 +115,18 @@ void setup() {
 
     // CLOCK
 
-#define DIVIS_H 0xfd
+#define DIVIS_H 0xfd // archival copy had this value.
 #undef  DIVIS_H
 #define DIVIS_H 0x0d
 #undef  DIVIS_H
 #define DIVIS_H 0x3d
 
+ // REG_GCLK_GENDIV = GCLK_GENDIV_DIV(0xfd)    |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
+
     REG_GCLK_GENDIV = GCLK_GENDIV_DIV(DIVIS_H) |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
+                                                    //     (It's a nice comment.  Retained with no requirement of
+                                                    //     specific applicability.)
+
                       GCLK_GENDIV_ID(4);            // Select Generic Clock (GCLK) 4
     while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
@@ -151,36 +155,48 @@ void setup() {
 
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);        // Wait for synchronization
  // REG_TC4_COUNT8_PER = 0xec;                      // Set the PER (period) register to its maximum value
-    REG_TC4_COUNT8_PER = PERIOD ;                   // Set the PER (period) register to its maximum value
+    REG_TC4_COUNT8_PER = PERIOD ;                   // Set the PER (period) register
 
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);        // Wait for synchronization
 
     NVIC_SetPriority(TC4_IRQn, 0);    // Set the Nested Vector Interrupt Controller (NVIC) priority for TC4 to 0 (highest)
     NVIC_EnableIRQ(TC4_IRQn);         // Connect TC4 to Nested Vector Interrupt Controller (NVIC)
 
-    REG_TC4_INTFLAG |= TC_INTFLAG_MC1 | TC_INTFLAG_MC0 | TC_INTFLAG_OVF;        // Clear the interrupt flags
+    REG_TC4_INTFLAG |= TC_INTFLAG_MC1  | TC_INTFLAG_MC0  | TC_INTFLAG_OVF;      // Clear the interrupt flags
     REG_TC4_INTENSET = TC_INTENSET_MC1 | TC_INTENSET_MC0 | TC_INTENSET_OVF;     // Enable TC4 interrupts
  
     // -------------------------------------------------
     // 
     //                23 June 2018
     // 
-    //    To change the blink rate of the LED on D13,
-    //     select a different prescaler here:
+    //    To change the blink rate's range, for
+    //    blinking the LED on D13 ...
+    // 
+    //    ... select a different prescaler
+    // 
+    //         (scroll down ~16 lines)
     // 
     // -------------------------------------------------
 
-    // 1024 256 64 16:
 
-    // easier to measure intervals with a stopwatch if using a larger clock divisor:
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    // 
+    //     easier to measure intervals with a stopwatch
+    //     if using a larger clock divisor.
+    // 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    // 1024 256 64 16
+
+    // Enable only one of the four lines, below:
 
         REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV1024 |   // Set prescaler to 1024
-
     //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV256  |   // Set prescaler to  256
-
     //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV64   |   // Set prescaler to   64, 16MHz/64 = 256kHz
-
     //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV16   |   // Set prescaler to   16
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
                          TC_CTRLA_ENABLE;               // Enable TC4
 
