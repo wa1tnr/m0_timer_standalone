@@ -1,20 +1,22 @@
-// Sat 23 Jun 17:15:05 UTC 2018
-// 0105-a0a-00-
-
-// Fri Jun 30 20:18:10 UTC 2017
-// 0103-a0a-00-
+// Sat 23 Jun 18:50:05 UTC 2018
+// 0105-a0a-01-
 
 #include <Arduino.h>
 #include "neo_pixel.h"
 #define LED 13
 
+// swap for opposite function:
+#define WAITFOR // do we wait for a serial connection or not?
+#undef  WAITFOR // do we wait for a serial connection or not?
+
 /******************************************************************************/
 /**  The Arduino M0 pro has 0x4000 as bootloader offset                      **/
 /******************************************************************************/
 
-/* [ http://forum.arduino.cc/index.php?topic=332275.17 ] */
+/* ideas sourced from MartinL on forum.arduino.cc */
+/*     [ http://forum.arduino.cc/index.php?topic=332275.17 ] */
 
-int scale = 1;
+int state = 1;
 
 void tickOff(void) { } 
 void tickOn(void) { } 
@@ -35,15 +37,37 @@ void blinkenlight(void) {
 }
 
 void introduction() {
-    blinkenlight(); Serial.print(".");
+    Serial.println("\r\n\r\nThis is the introduction");
+    delay(4000);
+    Serial.println("which I will share with you");
+    delay(4000);
+    Serial.println("in no uncertain terms:");
+    delay(4000);
+    Serial.println(" Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor" );
+    Serial.println(" ");
+    Serial.println(" (end of truncated introduction.  Bye.)");
 }
 
 void iblinki(void) {
-    blinkenlight();
+    brightenlight();
+    delay(30);
+    darkenlight();
+    delay(800);
 }
 
+
 void setup() {
+  pinMode(LED, 1); // OUTPUT
+
   Serial.begin(38400); // Open serial communications
+
+  delay(2000); // forced 2 second delay -- omit if not desired.
+
+#ifdef WAITFOR // we want to wait for a serial connection
+  while(!Serial) { // hold for connection
+      iblinki(); delay(300);
+  }
+#endif // #ifdef WAITFOR
 
   // ANSI escape sequence
   //  (yellow text in VT220 terminal:
@@ -52,7 +76,6 @@ void setup() {
   Serial.print("\063\063"); // 33 - yellow fg
   Serial.print("m");        // for the stanza
 
-  pinMode(LED, 1); // OUTPUT
 
   darkenlight();
   blinkenlight();
@@ -115,18 +138,22 @@ void setup() {
 
   while (TC4->COUNT8.STATUS.bit.SYNCBUSY);            // Wait for synchronization
 
-  // introduction();
-  iblinki();
+  Serial.println(" pip ");
+  delay(9000);
+  introduction();
 }
 
-// 1: scale  1, then 2, then -1: darken.
-// 2: scale -1, then 0:          brighten.
-// 3: scale  0, then 1, then -1: darken.
-// 4: scale -1, then 0:          brighten.
+// 1: index  1, then 2, then -1: darken.
+// 2: index -1, then 0:          brighten.
+// 3: index  0, then 1, then -1: darken.
+// 4: index -1, then 0:          brighten.
+
+// int state = 1;
+
 void pinToggle(void) {
-  scale = scale + 1 ;
-  if (scale > 0) {
-    scale = -1 ;     // reset
+  state = state + 1 ;
+  if (state > 0) {
+    state = -1 ;     // reset
     darkenlight();   // turn off LED
   } else {
     brightenlight(); // turn on LED
