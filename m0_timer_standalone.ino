@@ -1,15 +1,26 @@
-// Sat 23 Jun 18:51:12 UTC 2018
-// 0105-a0a-02-
+// Sat 23 Jun 19:43:57 UTC 2018
+// 0105-a0a-03-
 
-// kanicu
+// viskulna   telfidia    kanicu
 
 #include <Arduino.h>
-#include "neo_pixel.h"
-#define LED 13
+#define LED 13 // which GPIO pin is the LED connected to?
 
 // swap for opposite function:
 #define WAITFOR // do we wait for a serial connection or not?
 #undef  WAITFOR // do we wait for a serial connection or not?
+
+// ---------------------
+//       PERIOD
+// ---------------------
+// varying the PERIOD is the best way to demo this code
+//  when unfamiliar with it. 23 June 2018.
+#define PERIOD 0xec
+#undef  PERIOD
+#define PERIOD 0x5c
+#undef  PERIOD
+// the last define wins out:
+#define PERIOD 0x05
 
 /******************************************************************************/
 /**  Simple state machine to toggle an LED from inside an ISR                **/
@@ -24,13 +35,24 @@ void tickOff(void) { }
 void tickOn(void) { } 
 void tick(void) { }
 
+#define INVERT_LIGHT
+#undef INVERT_LIGHT
+
 void darkenlight(void) {
+#ifdef INVERT_LIGHT
+    digitalWrite(LED, 1); // turn on
+#else
     digitalWrite(LED, 0); // turn off
+#endif
 }
 
 
 void brightenlight(void) {
+#ifdef INVERT_LIGHT
+    digitalWrite(LED, 0); // turn off
+#else
     digitalWrite(LED, 1); // turn on
+#endif
 }
 
 void blinkenlight(void) {
@@ -79,7 +101,9 @@ void setup() {
 
     // CLOCK
 
-    REG_GCLK_GENDIV = GCLK_GENDIV_DIV(0xfd) |       // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
+#define DIVIS_H 0xfd
+
+    REG_GCLK_GENDIV = GCLK_GENDIV_DIV(DIVIS_H) |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
                       GCLK_GENDIV_ID(4);            // Select Generic Clock (GCLK) 4
     while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
@@ -102,8 +126,14 @@ void setup() {
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);        // Wait for synchronization
     REG_TC4_COUNT8_CC1 = 0x02;                      // TC4 CC1 (arbitrary value)
 
+    // ---------------------
+    //       PERIOD
+    // ---------------------
+
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);        // Wait for synchronization
-    REG_TC4_COUNT8_PER = 0xec;                      // Set the PER (period) register to its maximum value
+ // REG_TC4_COUNT8_PER = 0xec;                      // Set the PER (period) register to its maximum value
+    REG_TC4_COUNT8_PER = PERIOD ;                   // Set the PER (period) register to its maximum value
+
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);        // Wait for synchronization
 
     NVIC_SetPriority(TC4_IRQn, 0);    // Set the Nested Vector Interrupt Controller (NVIC) priority for TC4 to 0 (highest)
@@ -123,11 +153,13 @@ void setup() {
 
     // 1024 256 64 16:
 
-    //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV1024 |   // Set prescaler to 1024
+    // easier to measure intervals with a stopwatch if using a larger clock divisor:
+
+        REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV1024 |   // Set prescaler to 1024
 
     //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV256  |   // Set prescaler to  256
 
-        REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV64   |   // Set prescaler to   64, 16MHz/64 = 256kHz
+    //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV64   |   // Set prescaler to   64, 16MHz/64 = 256kHz
 
     //  REG_TC4_CTRLA |= TC_CTRLA_PRESCALER_DIV16   |   // Set prescaler to   16
 
@@ -174,7 +206,7 @@ void TC4_Handler()             // Interrupt Service Routine (ISR) for timer TC4
 
    // ---------------------   ISR Payload   ---------------------
 
-   pinToggle();
+   pinToggle(); // payload CC0
 
    REG_TC4_INTFLAG = TC_INTFLAG_MC0;      // Clear the MC0 interrupt flag
   }
