@@ -15,12 +15,17 @@
 // ---------------------
 // varying the PERIOD is the best way to demo this code
 //  when unfamiliar with it. 23 June 2018.
-#define PERIOD 0xec
+#define PERIOD 0xec  // slow blink
 #undef  PERIOD
-#define PERIOD 0x5c
+#define PERIOD 0x25  // fast blink
 #undef  PERIOD
 // the last define wins out:
-#define PERIOD 0x05
+#define PERIOD 0x5c  // mid speed blink
+
+
+
+#undef  PERIOD
+#define PERIOD 0xec  // slow blink
 
 /******************************************************************************/
 /**  Simple state machine to toggle an LED from inside an ISR                **/
@@ -102,6 +107,10 @@ void setup() {
     // CLOCK
 
 #define DIVIS_H 0xfd
+#undef  DIVIS_H
+#define DIVIS_H 0x0d
+#undef  DIVIS_H
+#define DIVIS_H 0x3d
 
     REG_GCLK_GENDIV = GCLK_GENDIV_DIV(DIVIS_H) |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
                       GCLK_GENDIV_ID(4);            // Select Generic Clock (GCLK) 4
