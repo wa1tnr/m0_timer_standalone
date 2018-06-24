@@ -1,13 +1,16 @@
-// Sat 23 Jun 22:09:41 UTC 2018
-// 0105-a0a-07-
+// Sun 24 Jun 02:50:14 UTC 2018
+// 0105-a0a-09-
 
-//  tirivata    emix fie mef  mevlillentut  naknadador
+//  fasanatra    tirivata    emix fie mef
+//  mevlillentut  naknadador
 
 // C Feather M0 Express - current target 21:55z 23 June 2018
 // + Circuit Playground Express
 // + Feather M0 Express    + Metro M0 Express
 // + Gemma M0    + Trinket M0
 // + ItsyBitsy M0 (Crickit CPX hardware with ItsyBitsy M0 software)
+
+// Sat 23 Jun 22:09:41 UTC 2018 // 0105-a0a-07-
 
 #include <Arduino.h>
 #define LED 13 // which GPIO pin is the LED connected to?
@@ -44,10 +47,6 @@
 /*     [ http://forum.arduino.cc/index.php?topic=332275.17 ] */
 
 int state = 1;
-
-// void tickOff(void) { }  // dead code
-// void tickOn(void) { } 
-// void tick(void) { }
 
 #define INVERT_LIGHT
 #undef INVERT_LIGHT
@@ -115,18 +114,17 @@ void setup() {
 
     // CLOCK
 
-#define DIVIS_H 0xfd // archival copy had this value.
+#define DIVIS_H 0x03 // original divisor of 3, for a 16 MHz output
+#undef  DIVIS_H
+#define DIVIS_H 0xfd // somewhere near 190 KHz?  48MHz / 253
 #undef  DIVIS_H
 #define DIVIS_H 0x0d
 #undef  DIVIS_H
 #define DIVIS_H 0x3d
 
- // REG_GCLK_GENDIV = GCLK_GENDIV_DIV(0xfd)    |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
+ // REG_GCLK_GENDIV = GCLK_GENDIV_DIV(3) |          // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
 
-    REG_GCLK_GENDIV = GCLK_GENDIV_DIV(DIVIS_H) |    // Divide the 48MHz clock source by divisor 3: 48MHz/3=16MHz
-                                                    //     (It's a nice comment.  Retained with no requirement of
-                                                    //     specific applicability.)
-
+    REG_GCLK_GENDIV = GCLK_GENDIV_DIV(DIVIS_H) |    // Divide the 48MHz clock source by the divisor
                       GCLK_GENDIV_ID(4);            // Select Generic Clock (GCLK) 4
     while (GCLK->STATUS.bit.SYNCBUSY);              // Wait for synchronization
 
@@ -197,7 +195,6 @@ void setup() {
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
                          TC_CTRLA_ENABLE;               // Enable TC4
 
     while (TC4->COUNT8.STATUS.bit.SYNCBUSY);            // Wait for synchronization
@@ -207,12 +204,10 @@ void setup() {
     introduction();
 }
 
-// 1: index  1, then 2, then -1: darken.
-// 2: index -1, then 0:          brighten.
-// 3: index  0, then 1, then -1: darken.
-// 4: index -1, then 0:          brighten.
-
-// int state = 1;
+// 1: state  1, then 2, then -1: darken.
+// 2: state -1, then 0:          brighten.
+// 3: state  0, then 1, then -1: darken.
+// 4: state -1, then 0:          brighten.
 
 void pinToggle(void) {
   state = state + 1 ;
@@ -249,9 +244,8 @@ void TC4_Handler()             // Interrupt Service Routine (ISR) for timer TC4
   if (TC4->COUNT8.INTFLAG.bit.MC1 && TC4->COUNT8.INTENSET.bit.MC1)           
   {
    REG_TC4_INTFLAG = TC_INTFLAG_MC1;      // Clear the MC1 interrupt flag
+   // stick a payload here.  Remember this is an ISR.  Keep it short.
   }
 }
-
-
 
 // end.
